@@ -1,8 +1,9 @@
 /* ==========================================================================
-   JAC-KNES · Interfaz (compartida por la app instalable y la versión Apps Script)
+   JAC-KNES · Interfaz de la app instalable
    Necesita window.Backend con: getData, registrarEntrada, registrarSalida, deshacer,
    crearPaquete, marcarUso, cambiarCantidad, getResumenMes, subirFoto, quitarFoto,
-   getFotos y, opcionalmente, login / otraCuenta / salir.
+   getFotos, entrar(pin), salir, tienePin.
+   Se entra con un PIN de 4 dígitos (lo revisa el servidor); no hay cuentas de Google.
    Todas las horas internas van en 'HH:mm' (24 h) y SIEMPRE se muestran en 12 h (AM/PM).
    ========================================================================== */
 (function(){
@@ -12,7 +13,7 @@
   var PAQ_TIPOS = ['Paseo campo','Piscina'];
   var CHIPS = [4,5,6,7];
   var state = { data:null, q:'', sel:null, tipo:'Pasadía', busy:false, lastUndoId:null,
-                mesVer:null, resumen:{}, cant:5, nuevoPaq:false, editPaq:false, authFalta:false };
+                mesVer:null, resumen:{}, cant:5, nuevoPaq:false, editPaq:false };
   var minis = {}, grandes = {}, pedidos = {}, fallidos = {};
   var $ = function(id){ return document.getElementById(id); };
   if (window.LOGO_SRC) Array.prototype.forEach.call(document.querySelectorAll('img.logo'), function(i){ i.src = window.LOGO_SRC; });
@@ -25,7 +26,7 @@
     var args = Array.prototype.slice.call(arguments,1);
     return Promise.resolve().then(function(){ return B[fn].apply(B, args); });
   }
-  function esAuth(e){ return e && e.code === 'AUTH'; }
+  function esPin(e){ return e && e.code === 'PIN'; }
 
   function show(id){ ['vStart','vList','vDet'].forEach(function(v){ $(v).classList.toggle('hidden', v!==id); }); window.scrollTo(0,0); }
   function loading(on){ $('loading').classList.toggle('hidden',!on); }
@@ -152,19 +153,41 @@
       .then(function(){ state.busy=false; loading(false); $('fotoIn').value=''; });
   }
 
-  /* ----------- Sesión ----------- */
-  function bannerHtml(){
-    return state.authFalta && B.login ? '<div class="banner">🔒 Tu sesión de Google se cerró.<button data-login="1">Entrar con Google</button></div>' : '';
+  /* ----------- PIN ----------- */
+  var pinTxt = '', pinOcupado = false;
+  function pintarPin(){
+    Array.prototype.forEach.call($('pinDots').children, function(d, i){ d.classList.toggle('on', i < pinTxt.length); });
   }
-  function renderBanner(){ $('authBanner').innerHTML = bannerHtml(); $('authBanner2').innerHTML = bannerHtml(); }
+  function pantallaPin(msg){
+    pinTxt = ''; pinOcupado = false; pintarPin();
+    $('pinErr').textContent = msg || '';
+    $('pinBox').classList.remove('hidden','enviando');
+    $('startDots').classList.add('hidden'); $('startMsg').classList.add('hidden');
+    $('startRetry').classList.add('hidden'); $('startPin').classList.add('hidden');
+    show('vStart');
+  }
+  function pinVisible(){ return !$('vStart').classList.contains('hidden') && !$('pinBox').classList.contains('hidden'); }
+  function teclaPin(d){
+    if (pinOcupado || !pinVisible()) return;
+    if (d === 'borrar') pinTxt = pinTxt.slice(0, -1);
+    else if (pinTxt.length < 4) pinTxt += d;
+    $('pinErr').textContent = ''; pintarPin();
+    if (pinTxt.length === 4) enviarPin();
+  }
+  function enviarPin(){
+    pinOcupado = true; $('pinBox').classList.add('enviando');
+    B.entrar(pinTxt).then(function(){
+      pinOcupado = false; $('pinBox').classList.remove('enviando'); arrancar();
+    }, function(e){
+      pantallaPin(esPin(e) ? 'PIN incorrecto. Intenta de nuevo.' : mensajeError(e));
+      if (esPin(e)) { var b = $('pinBox'); b.classList.remove('sacude'); void b.offsetWidth; b.classList.add('sacude'); }
+    });
+  }
+  // El servidor ya no acepta el PIN guardado (lo cambiaron): se vuelve a pedir.
+  function pinPerdido(){ state.data = null; state.sel = null; state.busy = false; loading(false); pantallaPin('El PIN cambió. Escribe el PIN nuevo.'); }
   function fallo(e){
-    if (esAuth(e)) { state.authFalta = true; renderBanner(); toast('🔒 Vuelve a entrar con Google para continuar.'); return; }
+    if (esPin(e)) { pinPerdido(); return; }
     toast('⚠️ '+mensajeError(e));
-  }
-  function entrar(otra){
-    // Debe llamarse directo desde el toque (Google abre una ventanita).
-    var p = otra && B.otraCuenta ? B.otraCuenta() : B.login();
-    return p.then(function(){ state.authFalta = false; renderBanner(); });
   }
 
   /* ----------- Render lista ----------- */
@@ -194,8 +217,7 @@
     $('stats').innerHTML = '<span><i class="dot"></i>Vinieron hoy: <b>'+vinieron+'</b></span><span>En hotel: <b>'+enHotel+'</b></span><span class="upd">Actualizado '+esc(h12(state.data.hora))+'</span>';
     var h = state.data.hotel||[];
     $('hotelBox').innerHTML = h.length ? '<div class="hotel">🏨 <b>Hotel 24H:</b> '+esc(h.join(' · '))+'</div>' : '';
-    $('foot').innerHTML = state.data.usuario ? 'Conectado como '+esc(state.data.usuario)+(B.salir?' · <button id="bSalir">Cerrar sesión</button>':'') : '';
-    renderBanner();
+    $('foot').innerHTML = 'Conectado con PIN · <button id="bSalir">Salir</button>';
   }
 
   /* ----------- Render detalle ----------- */
@@ -300,7 +322,7 @@
     var cargando = c.foto && !grandes[c.foto] && !fallidos[c.foto];
     var h = '';
     h += '<div class="photo">'+(big ? '<img src="'+esc(big)+'" alt="Foto de '+esc(c.mascota)+'">' :
-         '<div class="ph"><span>🐶</span>'+(c.foto && fallidos[c.foto] ? 'Foto guardada con otra cuenta' : 'Sin foto')+'</div>')+
+         '<div class="ph"><span>🐶</span>'+(c.foto && fallidos[c.foto] ? 'No se pudo cargar la foto' : 'Sin foto')+'</div>')+
          (cargando?'<div class="spin2"></div>':'')+'</div>';
     h += '<div class="photobtns"><button class="tlink red" id="bFoto">📷 '+(c.foto?'Cambiar foto':'Agregar foto')+'</button>'+
          (c.foto?'<button class="tlink" id="bQuitarFoto">Quitar foto</button>':'')+'</div>';
@@ -321,14 +343,13 @@
          (c.notas?kv('Notas', esc(c.notas)):'')+kv('ID', esc(c.id))+'</div>';
     h += renderHist(c);
     $('det').innerHTML = h;
-    renderBanner();
   }
   function kv(k,v){ return '<div class="kv"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
 
   /* ----------- Datos ----------- */
   function setData(d){
     var mesAntes = state.data && state.data.mes;
-    state.data = d; state.authFalta = false;
+    state.data = d;
     if (mesAntes && mesAntes !== d.mes) state.mesVer = null;
     renderList(); if (!$('vDet').classList.contains('hidden')) renderDet(); pedirMinis();
   }
@@ -337,8 +358,8 @@
     if (state.busy && silencioso) return Promise.resolve();
     if (enCurso && silencioso) return enCurso;
     if (!silencioso) loading(true);
-    return enCurso = call('getData').then(function(d){ setData(d); }).catch(function(e){
-      if (esAuth(e)) { state.authFalta = true; renderBanner(); return; }
+    return enCurso = call('getData').then(function(d){ if (B.tienePin()) setData(d); }).catch(function(e){
+      if (esPin(e)) { pinPerdido(); return; }
       if (!silencioso) toast('⚠️ '+mensajeError(e));
     }).then(function(){ loading(false); enCurso = null; });
   }
@@ -358,32 +379,37 @@
   /* ----------- Inicio ----------- */
   function pantallaInicio(msg, opciones){
     opciones = opciones || {};
+    $('pinBox').classList.add('hidden');
     $('startDots').classList.toggle('hidden', !!msg);
     $('startMsg').textContent = msg || ''; $('startMsg').classList.toggle('hidden', !msg);
-    $('startLogin').classList.toggle('hidden', !opciones.login);
     $('startRetry').classList.toggle('hidden', !opciones.retry);
-    $('startOtra').classList.toggle('hidden', !opciones.otra);
+    $('startPin').classList.toggle('hidden', !opciones.pin);
     show('vStart');
   }
   function arrancar(){
+    if (!B.tienePin()) { pantallaPin(''); return; }
     pantallaInicio('');
     call('getData').then(function(d){ setData(d); show('vList'); })
       .catch(function(e){
-        if (esAuth(e) && B.login) pantallaInicio(e.mensajeInicio || 'Entra con tu cuenta de Google para ver los perros.', {login:true});
-        else pantallaInicio(mensajeError(e), {retry:true, otra: !!B.otraCuenta && /acceso|permiso/i.test(mensajeError(e))});
+        if (esPin(e)) pantallaPin('El PIN guardado ya no sirve. Escribe el PIN.');
+        else pantallaInicio(mensajeError(e), {retry:true, pin:true});
       });
   }
   $('startRetry').addEventListener('click', arrancar);
-  $('startLogin').addEventListener('click', function(){
-    entrar(false).then(arrancar, function(e){ pantallaInicio(mensajeError(e), {login:true}); });
+  $('startPin').addEventListener('click', function(){ B.salir(); pantallaPin(''); });
+  $('pinPad').addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if (!b) return;
+    teclaPin(b.id === 'pinBorrar' ? 'borrar' : b.getAttribute('data-d'));
   });
-  $('startOtra').addEventListener('click', function(){
-    entrar(true).then(arrancar, function(e){ pantallaInicio(mensajeError(e), {login:true}); });
+  document.addEventListener('keydown', function(ev){
+    if (!pinVisible()) return;
+    if (/^[0-9]$/.test(ev.key)) { teclaPin(ev.key); ev.preventDefault(); }
+    else if (ev.key === 'Backspace') { teclaPin('borrar'); ev.preventDefault(); }
   });
   document.addEventListener('click', function(ev){
-    var t = ev.target;
-    if (t.closest && t.closest('[data-login]')) { entrar(false).then(function(){ cargar(false); }, function(e){ toast('⚠️ '+mensajeError(e)); }); return; }
-    if (t.id === 'bSalir' && B.salir && confirm('¿Cerrar la sesión de Google en esta app?')) { B.salir(); state.data = null; pantallaInicio('Sesión cerrada.', {login:true}); }
+    if (ev.target.id === 'bSalir' && confirm('¿Salir de la app en este teléfono? Para volver a entrar se pedirá el PIN.')) {
+      B.salir(); state.data = null; state.sel = null; pantallaPin('');
+    }
   });
   $('q').addEventListener('input', function(){ state.q = this.value; renderList(); });
   $('groups').addEventListener('click', function(ev){
@@ -437,7 +463,7 @@
   });
 
   // Sincronización: refresca cada 45 s y al volver a la app
-  setInterval(function(){ if(!document.hidden && state.data && !state.authFalta) cargar(true); }, REFRESH_MS);
+  setInterval(function(){ if(!document.hidden && state.data) cargar(true); }, REFRESH_MS);
   document.addEventListener('visibilitychange', function(){ if(!document.hidden && state.data) cargar(true); });
   window.addEventListener('focus', function(){ if(state.data && !state.busy) cargar(true); });
 

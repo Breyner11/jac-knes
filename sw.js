@@ -1,6 +1,6 @@
 /* JAC-KNES · Service worker: guarda solo el "cascarón" de la app para que abra rápido.
-   Los datos (Google Sheets/Drive) nunca se guardan aquí: siempre se piden en vivo. */
-var VERSION = 'jacknes-v1';
+   Los datos (pedidos a la API de Apps Script) nunca se guardan aquí: siempre van en vivo a la red. */
+var VERSION = 'jacknes-v2';
 var CASCARON = [
   './', 'index.html', 'styles.css', 'config.js', 'backend.js', 'ui.js', 'pwa.js', 'manifest.webmanifest',
   'img/logo.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
@@ -16,7 +16,9 @@ self.addEventListener('activate', function(e){
 });
 self.addEventListener('fetch', function(e){
   var req = e.request, url = new URL(req.url);
-  if (req.method !== 'GET' || url.origin !== self.location.origin) return; // Google APIs: directo a la red
+  // La API (script.google.com / googleusercontent.com) y todo lo que no sea GET del mismo sitio: directo a la red.
+  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (/script\.google(usercontent)?\.com|googleusercontent\.com/.test(url.hostname)) return;
   // Rápido desde caché y se actualiza por detrás (stale-while-revalidate).
   e.respondWith(caches.open(VERSION).then(function(c){
     return c.match(req, { ignoreSearch: true }).then(function(hit){
