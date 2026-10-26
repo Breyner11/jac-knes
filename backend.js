@@ -68,6 +68,15 @@
   /* ================================ Datos ================================ */
   function getData(){ return llamar('getData').then(function(j){ return j.data; }); }
   function registrarEntrada(clienteId, tipo){ return escribir('registrarEntrada', { clienteId: clienteId, tipo: tipo }); }
+  // Perros: datos = { mascota, cliente, contacto, encargado, modalidad, notas, foto, mini, forzar }
+  function agregarPerro(datos){ return escribir('agregarPerro', datos); }
+  function editarPerro(clienteId, datos){ var d = {}; for (var k in datos) d[k] = datos[k]; d.clienteId = clienteId; return escribir('editarPerro', d); }
+  function retirarPerro(clienteId){ return escribir('retirarPerro', { clienteId: clienteId }); }
+  function restaurarPerro(clienteId){ return escribir('restaurarPerro', { clienteId: clienteId }); }
+  function hotelAgregar(clienteId, nombre){ return escribir('hotelAgregar', { clienteId: clienteId || '', nombre: nombre || '' }); }
+  function hotelSacar(nombre){ return escribir('hotelSacar', { nombre: nombre }); }
+  function getDia(fecha){ return llamar('getDia', { fecha: fecha || '' }).then(function(j){ return j.dia; }); }
+  function resumenMes(anio, mes){ return llamar('resumenMes', { anio: anio, mes: mes }).then(function(j){ return j.resumen; }); }
   function registrarSalida(registroId){ return escribir('registrarSalida', { registroId: registroId }); }
   function deshacer(registroId){ return escribir('deshacer', { registroId: registroId }); }
   function getResumenMes(clienteId, anio, mes){ return llamar('getResumenMes', { clienteId: clienteId, anio: anio, mes: mes }).then(function(j){ return j.resumen; }); }
@@ -82,6 +91,8 @@
     getData: getData, registrarEntrada: registrarEntrada, registrarSalida: registrarSalida, deshacer: deshacer,
     getResumenMes: getResumenMes, crearPaquete: crearPaquete, marcarUso: marcarUso, cambiarCantidad: cambiarCantidad,
     subirFoto: subirFoto, quitarFoto: quitarFoto, getFotos: getFotos,
+    agregarPerro: agregarPerro, editarPerro: editarPerro, retirarPerro: retirarPerro, restaurarPerro: restaurarPerro,
+    hotelAgregar: hotelAgregar, hotelSacar: hotelSacar, getDia: getDia, resumenMes: resumenMes,
     entrar: entrar, salir: salir, tienePin: tienePin, configurada: configurada
   };
 })();

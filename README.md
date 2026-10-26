@@ -14,6 +14,15 @@ Dirección de la app: **https://breyner11.github.io/jac-knes/**
 - Las fotos **nunca se hacen públicas**: el servidor las entrega solo con el PIN correcto.
 - Todas las horas se muestran en formato de 12 horas (AM/PM).
 
+## Qué se puede hacer
+- **Lista de perros** con buscador y filtro por modo de recogida (Paseo, Van 01, Van 02).
+- **Ficha de cada perro**: Pasadía, Hotel (entrada/salida), paquetes de Paseo campo y Piscina, foto, **Editar datos** y **Quitar de la lista**.
+- **＋ Agregar perro**: mascota (obligatorio), dueño, teléfono, encargado, modo de recogida, foto y nota. Avisa si ya existe uno con la misma mascota y dueño.
+- **Quitar de la lista** no borra nada: marca Activo = «No» y conserva historial y paquetes. Se restauran desde «Perros retirados» (en Agregar perro).
+- **📋 Hoy**: lo que se registró en el día, separado en Llegaron (Pasadía), Paseo campo, Piscina, Hotel y Hotel 24H. Se puede ver cualquier día anterior y se actualiza solo.
+- **Hotel 24H**: tocar el recuadro de la lista para agregar o sacar perros; cada movimiento queda anotado.
+- **📊 Mes**: resumen del mes (pasadías, sesiones y paquetes, hotel, tabla por perro y conteo por día).
+
 ## Configuración
 Lo único que hay que poner es la URL del servidor en **`config.js`**:
 
@@ -41,8 +50,9 @@ En iPhone se usa Safari → Compartir → «Agregar a inicio».
   - Las filas antiguas con el tipo «Paseo» se muestran como «Paseo campo».
 - **Paquetes**: ID paquete, ClienteID, Mascota, Tipo, Cantidad, Fecha inicio, Estado, Nota. El Estado puede ser `Activo`, `Completo` (se usaron todas las sesiones) o `Cerrado` (se empezó uno nuevo antes de terminar).
 - **Hotel24H**: lista de nombres separados por `;`.
+- **Hotel24H historial**: Fecha, Hora, Acción (Entró/Salió), Mascota, ClienteID, Registrado por.
 
-El servidor crea solo la pestaña «Paquetes» y el encabezado «Paquete» de la columna K si no existen.
+El servidor crea solo las pestañas «Paquetes» y «Hotel24H historial» y el encabezado «Paquete» (K) si no existen.
 
 ## Fotos
 - Se comprimen en el teléfono (foto de unos 800 px y miniatura de 200 px) y el servidor las guarda en la carpeta «Perros – Fotos» del Drive de quien publicó el servidor.
@@ -51,7 +61,7 @@ El servidor crea solo la pestaña «Paquetes» y el encabezado «Paquete» de la
 ## Archivos
 | Archivo | Para qué |
 |---|---|
-| `index.html` | Pantallas: PIN, lista y perfil |
+| `index.html` | Pantallas: PIN, lista, perfil, Hoy, Mes, Agregar perro y Hotel 24H |
 | `styles.css` | Estilos (rojo/negro JAC-KNES) |
 | `config.js` | **API_URL** del servidor de Apps Script |
 | `backend.js` | Conexión con el servidor (PIN y pedidos) |

@@ -48,6 +48,12 @@
       <div class="stats" id="stats"></div>
     </div>
   </div>
+  <div class="tools">
+    <button id="bHoy">📋 Hoy</button>
+    <button id="bMes">📊 Mes</button>
+    <button id="bAgregar" class="primary">＋ Agregar perro</button>
+  </div>
+  <div class="modos" id="modos"></div>
   <div id="hotelBox"></div>
   <div id="groups"></div>
   <div class="foot" id="foot"></div>
@@ -59,7 +65,48 @@
   <div id="det"></div>
 </div>
 
+<!-- Hoy / historial del día -->
+<div id="vHoy" class="screen hidden">
+  <div class="nav"><button class="back" data-volver>‹ Perros</button><img class="mini-logo" src="icons/apple-touch-icon.png" alt=""></div>
+  <div class="vtit">Registro del día</div>
+  <div class="diabar">
+    <button id="diaPrev" aria-label="Día anterior">‹</button>
+    <input type="date" id="diaIn" aria-label="Fecha">
+    <button id="diaNext" aria-label="Día siguiente">›</button>
+    <button id="diaHoy" class="tlink">Hoy</button>
+  </div>
+  <div id="hoyBody"></div>
+</div>
+
+<!-- Resumen del mes -->
+<div id="vMes" class="screen hidden">
+  <div class="nav"><button class="back" data-volver>‹ Perros</button><img class="mini-logo" src="icons/apple-touch-icon.png" alt=""></div>
+  <div class="vtit">Resumen del mes</div>
+  <div class="mesnav"><button id="rmPrev" aria-label="Mes anterior">‹</button><div class="sect" id="rmTit"></div><button id="rmNext" aria-label="Mes siguiente">›</button></div>
+  <div id="mesBody"></div>
+</div>
+
+<!-- Agregar / editar perro -->
+<div id="vForm" class="screen hidden">
+  <div class="nav"><button class="back" id="formVolver">‹ Volver</button><img class="mini-logo" src="icons/apple-touch-icon.png" alt=""></div>
+  <div id="formBody"></div>
+</div>
+
+<!-- Hotel 24H -->
+<div id="vHotel" class="screen hidden">
+  <div class="nav"><button class="back" data-volver>‹ Perros</button><img class="mini-logo" src="icons/apple-touch-icon.png" alt=""></div>
+  <div class="vtit">🏨 Hotel 24H</div>
+  <div class="nota" style="margin:0 16px 8px">Perros que se quedan en el hotel todo el tiempo.</div>
+  <div id="h24Body"></div>
+</div>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="mbox"><div class="mt" id="modalTit"></div><div class="mtx" id="modalTxt"></div>
+    <div class="mbtns"><button id="modalNo">Cancelar</button><button id="modalSi" class="danger">Aceptar</button></div></div>
+</div>
+
 <input id="fotoIn" type="file" accept="image/*" class="hidden">
+<input id="fotoNuevo" type="file" accept="image/*" class="hidden">
 <div id="toast" class="toast hidden"><div id="toastMsg" class="grow"></div><button id="toastUndo">Deshacer</button></div>
 <div id="loading" class="loading hidden"><div class="spin"></div></div>
 

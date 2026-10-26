@@ -1,6 +1,6 @@
 /* JAC-KNES · Service worker: guarda solo el "cascarón" de la app para que abra rápido.
    Los datos (pedidos a la API de Apps Script) nunca se guardan aquí: siempre van en vivo a la red. */
-var VERSION = 'jacknes-v2';
+var VERSION = 'jacknes-v3';
 var CASCARON = [
   './', 'index.html', 'styles.css', 'config.js', 'backend.js', 'ui.js', 'pwa.js', 'manifest.webmanifest',
   'img/logo.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
